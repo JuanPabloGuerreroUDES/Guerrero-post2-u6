@@ -18,6 +18,9 @@ public class ProductoServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        if (!verificarSesion(req, resp)) return;
+
+
         String accion = req.getParameter("accion");
         if (accion == null) accion = "listar";
 
@@ -42,6 +45,9 @@ public class ProductoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
+        if (!verificarSesion(req, resp)) return;
+
 
         req.setCharacterEncoding("UTF-8");
         String accion = req.getParameter("accion");
@@ -161,5 +167,18 @@ public class ProductoServlet extends HttpServlet {
             throws ServletException, IOException {
 
         req.getRequestDispatcher(path).forward(req, resp);
+    }
+
+    private boolean verificarSesion(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        HttpSession session = req.getSession(false);
+
+        if (session == null || session.getAttribute("usuarioActual") == null) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return false;
+        }
+
+        return true;
     }
 }
