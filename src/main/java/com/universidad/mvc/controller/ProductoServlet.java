@@ -7,6 +7,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 import java.io.IOException;
 
 @WebServlet("/productos")
@@ -63,6 +66,8 @@ public class ProductoServlet extends HttpServlet {
 
     // --- Métodos privados ---
 
+
+
     private void listar(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -103,19 +108,66 @@ public class ProductoServlet extends HttpServlet {
     }
 
     private void guardar(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+            throws ServletException, IOException {
 
-        try {
-            Producto p = extraerProducto(req, 0);
-            service.guardar(p);
+        req.setCharacterEncoding("UTF-8");
 
-            resp.sendRedirect(req.getContextPath() +
-                    "/productos?mensaje=Producto+guardado+exitosamente");
+        // --- Parámetros ---
+        String nombre = req.getParameter("nombre");
+        String precioStr = req.getParameter("precio");
+        String stockStr = req.getParameter("stock");
+        String categoria = req.getParameter("categoria");
 
-        } catch (Exception e) {
-            resp.sendRedirect(req.getContextPath() +
-                    "/productos?mensaje=Error+al+guardar");
+        // --- Validaciones ---
+        Map<String, String> errores = new LinkedHashMap<>();
+
+        // Validar nombre
+        if (nombre == null || nombre.trim().isEmpty()) {
+            errores.put("nombre", "El nombre del producto es obligatorio.");
+        } else if (nombre.trim().length() > 100) {
+            errores.put("nombre", "El nombre no debe superar los 100 caracteres.");
         }
+
+        // Validar precio
+        double precio = 0;
+        try {
+            precio = Double.parseDouble(precioStr);
+            if (precio < 0) {
+                errores.put("precio", "El precio no puede ser negativo.");
+            }
+        } catch (NumberFormatException e) {
+            errores.put("precio", "El precio debe ser un número válido (ej: 19.99).");
+        }
+
+        // Validar stock
+        int stock = 0;
+        try {
+            stock = Integer.parseInt(stockStr);
+            if (stock < 0) {
+                errores.put("stock", "El stock no puede ser negativo.");
+            }
+        } catch (NumberFormatException e) {
+            errores.put("stock", "El stock debe ser un número entero.");
+        }
+
+        // --- Si hay errores ---
+        if (!errores.isEmpty()) {
+            req.setAttribute("errores", errores);
+            req.setAttribute("nombre", nombre);
+            req.setAttribute("precio", precioStr);
+            req.setAttribute("stock", stockStr);
+            req.setAttribute("categoria", categoria);
+
+            forward(req, resp, "/WEB-INF/views/formulario.jsp");
+            return;
+        }
+
+        // --- Guardar producto ---
+        Producto producto = new Producto(0, nombre.trim(), categoria, precio, stock);
+        service.guardar(producto);
+
+        // --- Redirección (PRG) ---
+        resp.sendRedirect(req.getContextPath() + "/productos?mensaje=Producto+guardado");
     }
 
     private void actualizar(HttpServletRequest req, HttpServletResponse resp)

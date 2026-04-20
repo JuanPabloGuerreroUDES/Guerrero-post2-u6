@@ -37,6 +37,16 @@
         </c:otherwise>
     </c:choose>
 
+    <c:if test="${not empty errores}">
+        <div class="alert-error">
+            <ul>
+                <c:forEach var="e" items="${errores}">
+                    <li><c:out value="${e.value}" /></li>
+                </c:forEach>
+            </ul>
+        </div>
+    </c:if>
+
     <!-- Nombre -->
     <label>
         Nombre:
